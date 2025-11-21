@@ -154,23 +154,25 @@ non-nil, kill the buffer if it is saved.  Never kill an unsaved buffer."
   (delete-file file delete-by-moving-to-trash))
 
 ;;;###autoload
-(defun denote-merge-file (to-file from-file)
-  "Merge the contents of FROM-FILE to TO-FILE.
-Update any `denote:' links to FROM-FILE to point to TO-FILE.  Save the
-affected buffers subject to `denote-merge-save-buffers'.  Then delete
-FROM-FILE.  Mark the merged file contents with `denote-merge-annotate-file'.
+(defun denote-merge-file (destination-file source-file)
+  "Merge the contents of SOURCE-FILE to DESTINATION-FILE.
+Update any `denote:' links to SOURCE-FILE to point to DESTINATION-FILE
+Save the affected buffers subject to `denote-merge-save-buffers'.  Then
+delete FROM-FILE.  Annotate the merged file contents with
+`denote-merge-annotate-file'.
 
-When called interactively, prompt from FROM-FILE as a file in the
-variable `denote-directory'.  For the TO-FILE use the current file if it
-is editable and has a known file type, else prompt for one as well.
+When called interactively, prompt from SOURCE-FILE as a file in the
+variable `denote-directory'.  For the DESTINATION-FILE use the current
+file if it is editable and has a known file type, else prompt for one as
+well.
 
-Make the TO-FILE condition what the FROM-FILE will be by limiting the
-prompt for it to files that share the same file extension (e.g. merge an
-Org file into another Org file).  This is to ensure the contents are
-appropriate for the given major mode.
+Make the DESTINATION-FILE condition what the SOURCE-FILE will be by
+limiting the prompt for it to files that share the same file
+extension (e.g. merge an Org file into another Org file).  This is to
+ensure the contents are appropriate for the given major mode.
 
-When called from Lisp, FROM-FILE and TO-FILE are strings pointing to
-file paths.  Throw an error if their file extensions differ."
+When called from Lisp, SOURCE-FILE and DESTINATION-FILE are strings
+pointing to file paths.  Throw an error if their file extensions differ."
   (interactive
    (let* ((current-file (if (and buffer-file-name
                                  (denote-file-is-writable-and-supported-p buffer-file-name))
@@ -181,17 +183,17 @@ file paths.  Throw an error if their file extensions differ."
      (list
       current-file
       (denote-file-prompt files-to-limit-to "File to merge FROM"))))
-  (unless (string= (file-name-extension to-file) (file-name-extension from-file))
-    (error "The files do not share the same file extension: from `%s' to `%s'" from-file to-file))
-  (unless (file-writable-p to-file)
-    (user-error "The file `%s' is not writable; aborting" to-file))
-  (unless (file-writable-p from-file)
-    (user-error "The file `%s' is not writable; aborting" from-file))
-  (let ((old-contents (denote-merge--get-contents from-file))
-        (old-title (denote-retrieve-title-or-filename from-file (denote-filetype-heuristics from-file)))
-        (old-identifier (denote-retrieve-filename-identifier from-file))
-        (new-identifier (denote-retrieve-filename-identifier to-file)))
-    (with-current-buffer (find-file to-file)
+  (unless (string= (file-name-extension destination-file) (file-name-extension source-file))
+    (error "The files do not share the same file extension: from `%s' to `%s'" source-file destination-file))
+  (unless (file-writable-p destination-file)
+    (user-error "The file `%s' is not writable; aborting" destination-file))
+  (unless (file-writable-p source-file)
+    (user-error "The file `%s' is not writable; aborting" source-file))
+  (let ((old-contents (denote-merge--get-contents source-file))
+        (old-title (denote-retrieve-title-or-filename source-file (denote-filetype-heuristics source-file)))
+        (old-identifier (denote-retrieve-filename-identifier source-file))
+        (new-identifier (denote-retrieve-filename-identifier destination-file)))
+    (with-current-buffer (find-file destination-file)
       (goto-char (point-max))
       (insert "\n\n")
       (insert (denote-merge--format-heading old-title))
@@ -200,14 +202,14 @@ file paths.  Throw an error if their file extensions differ."
            (old-backlinks-files (mapcar #'car old-backlinks-xrefs)))
       (dolist (file old-backlinks-files)
         (denote-merge--replace-identifier-in-file old-identifier new-identifier file denote-merge-save-buffers denote-merge-kill-buffers))
-      (denote-merge--delete-file from-file))
+      (denote-merge--delete-file source-file))
     (if denote-merge-save-buffers
         (message "Merged `%s' into `%s'"
-                 (propertize from-file 'face 'denote-faces-prompt-old-name)
-                 (propertize to-file 'face 'denote-faces-prompt-new-name))
+                 (propertize source-file 'face 'denote-faces-prompt-old-name)
+                 (propertize destination-file 'face 'denote-faces-prompt-new-name))
       (message "Merged `%s' into `%s'; do `%s' to save files that had the old file links"
-               (propertize from-file 'face 'denote-faces-prompt-old-name)
-               (propertize to-file 'face 'denote-faces-prompt-new-name)
+               (propertize source-file 'face 'denote-faces-prompt-old-name)
+               (propertize destination-file 'face 'denote-faces-prompt-new-name)
                (propertize "M-x save-some-buffers" 'face 'help-key-binding)))))
 
 (defconst denote-merge-format-region-types
