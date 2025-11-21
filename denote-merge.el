@@ -86,6 +86,13 @@ keep this option to its default nil value."
   :type 'boolean
   :package-version '(denote-merge . "0.1.0")
   :group 'denote-merge)
+
+(defcustom denote-merge-kill-buffers nil
+  "When non-nil, automatically saved buffers affected by merge operations.
+Unsaved buffers are never killed automatically.
+
+Killing buffers automatically might lead to data loss.  When in doubt,
+keep this option to its default nil value."
   :type 'boolean
   :package-version '(denote-merge . "0.1.0")
   :group 'denote-merge)
@@ -112,10 +119,15 @@ Determine the syntax of a heading based on the major mode."
     ('text-mode (format "%s\n%s\n\n" string (make-string (length string) ?-)))
     (_ (error "Unknown major mode; cannot format heading"))))
 
-(defun denote-merge--replace-identifier-in-file (old-identifier new-identifier file save-p)
+(defun denote-merge--kill-buffer (buffer)
+  "Kill the BUFFER without asking any questions."
+  (let ((kill-buffer-query-functions nil))
+    (kill-buffer buffer)))
+
+(defun denote-merge--replace-identifier-in-file (old-identifier new-identifier file save-p kill-p)
   "Replace every `denote:' link OLD-IDENTIFIER to NEW-IDENTIFIER in FILE.
-When SAVE-P is non-nil, save the affected buffer.  Else send a message
-to inform the user about the need to review and save the buffer."
+When SAVE-P is non-nil, save the affected buffer.  When KILL-P is
+non-nil, kill the buffer if it is saved.  Never kill an unsaved buffer."
   (condition-case error-data
       (with-current-buffer (find-file-noselect file)
         (goto-char (point-min))
@@ -123,9 +135,10 @@ to inform the user about the need to review and save the buffer."
                (regexp (denote--link-in-context-regexp file-type)))
           (while (re-search-forward regexp nil t)
             (replace-match new-identifier nil t nil 1)))
-        (if save-p
-            (save-buffer)
-          (message "Remember to review and save the buffer `%s'" (current-buffer))))
+        (when save-p
+          (save-buffer))
+        (when kill-p
+          (denote-merge--kill-buffer (current-buffer))))
     (:success
      (message "Updated `%s' to link to `%s' instead od `%s'"
               (propertize file 'face 'denote-faces-prompt-current-name)
@@ -137,14 +150,14 @@ to inform the user about the need to review and save the buffer."
 (defun denote-merge--delete-file (file)
   "Delete the given FILE in accordance with `delete-by-moving-to-trash'."
   (when-let* ((buffer (get-file-buffer file)))
-    (let ((kill-buffer-query-functions nil))
-      (kill-buffer buffer)))
+    (denote-merge--kill-buffer (current-buffer)))
   (delete-file file delete-by-moving-to-trash))
 
 ;;;###autoload
 (defun denote-merge-file (to-file from-file)
   "Merge the contents of FROM-FILE to TO-FILE.
-Update any `denote:' links to FROM-FILE to point to TO-FILE.  Then delete
+Update any `denote:' links to FROM-FILE to point to TO-FILE.  Save the
+affected buffers subject to `denote-merge-save-buffers'.  Then delete
 FROM-FILE.  Mark the merged file contents with `denote-merge-annotate-file'.
 
 When called interactively, prompt from FROM-FILE as a file in the
@@ -186,7 +199,7 @@ file paths.  Throw an error if their file extensions differ."
     (let* ((old-backlinks-xrefs (denote-retrieve-xref-alist-for-backlinks old-identifier))
            (old-backlinks-files (mapcar #'car old-backlinks-xrefs)))
       (dolist (file old-backlinks-files)
-        (denote-merge--replace-identifier-in-file old-identifier new-identifier file denote-merge-save-buffers))
+        (denote-merge--replace-identifier-in-file old-identifier new-identifier file denote-merge-save-buffers denote-merge-kill-buffers))
       (denote-merge--delete-file from-file))
     (if denote-merge-save-buffers
         (message "Merged `%s' into `%s'"
@@ -298,7 +311,9 @@ FORMAT-REGION-AS is a symbol among `denote-merge-format-region-types'.
 Mark the merged text with `denote-merge-annotate-region'.
 
 Automatically save the affected buffer if `denote-merge-save-buffers' is
-non-nil."
+non-nil.  Then automatically kill the buffer if
+`denote-merge-kill-buffers' is non-nil.  Only kill the buffer if it is
+saved."
   (interactive
    (list
     (denote-file-prompt nil "Merge region into FILE")
@@ -340,7 +355,9 @@ non-nil."
                 (denote-filetype-heuristics to-file)
                 nil)))
       (when denote-merge-save-buffers
-        (save-buffer)))))
+        (save-buffer))
+      (when denote-merge-kill-buffers
+        (denote-merge--kill-buffer (current-buffer))))))
 
 (provide 'denote-merge)
 ;;; denote-merge.el ends here
