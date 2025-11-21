@@ -296,7 +296,7 @@ Available types are those defined in `denote-merge-format-region-types'."
       nil t nil
       'denote-merge-format-region-type-prompt-history default))))
 
-:;;###autoload
+;;;###autoload
 (defun denote-merge-region (to-file &optional format-region-as)
   "Merge the currently active region TO-FILE.
 Delete the region from the current buffer after merging it.  Create link
@@ -331,15 +331,16 @@ saved."
     ;; the active region.  What we want is to use the title of the
     ;; file instead.
     (deactivate-mark)
-    (delete-region beg end)
-    ;; The link formatting has to be done in accordance with the type
-    ;; of the buffer we are visiting.  The user might link between Org
-    ;; and Markdown files, for example, so we cannot assume uniformity.
-    (insert (denote-format-link
-             to-file
-             (denote-get-link-description to-file)
-             (denote-filetype-heuristics from-file)
-             nil))
+    (when (denote-file-is-writable-and-supported-p from-file)
+      (delete-region beg end)
+      ;; The link formatting has to be done in accordance with the type
+      ;; of the buffer we are visiting.  The user might link between Org
+      ;; and Markdown files, for example, so we cannot assume uniformity.
+      (insert (denote-format-link
+               to-file
+               (denote-get-link-description to-file)
+               (denote-filetype-heuristics from-file)
+               nil)))
     (when denote-merge-save-buffers
       (save-buffer))
     (with-current-buffer (find-file-noselect to-file)
