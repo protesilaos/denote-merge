@@ -157,9 +157,10 @@ non-nil, kill the buffer if it is saved.  Never kill an unsaved buffer."
 (defun denote-merge-file (destination-file source-file)
   "Merge the contents of SOURCE-FILE to DESTINATION-FILE.
 Update any `denote:' links to SOURCE-FILE to point to DESTINATION-FILE
-Save the affected buffers subject to `denote-merge-save-buffers'.  Then
-delete FROM-FILE.  Annotate the merged file contents with
-`denote-merge-annotate-file'.
+Save and maybe kill the affected buffers subject to the user options
+`denote-merge-save-buffers' and `denote-merge-kill-buffers'.  Then
+delete SOURCE-FILE.  Annotate the merged file contents with the text of
+the user option `denote-merge-annotate-file'.
 
 When called interactively, prompt from SOURCE-FILE as a file in the
 variable `denote-directory'.  For the DESTINATION-FILE use the current
