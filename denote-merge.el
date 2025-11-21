@@ -368,5 +368,38 @@ kill the buffer if it is saved."
       (when denote-merge-kill-buffers
         (denote-merge--kill-buffer (current-buffer))))))
 
+(defmacro denote-merge-define-region-convenience-command (format-type)
+  "Define a convenience variant of `denote-merge-region' with FORMAR-TYPE.
+FORMAT-TYPE is a symbol one among `denote-merge-format-region-types'."
+  (unless (memq format-type denote-merge-format-region-types)
+    (error "The format type `%s' is not a member of `denote-merge-format-region-types'"))
+  `(defun ,(intern (format "denote-merge-region-%s" format-type)) (destination-file)
+     ,(format "Merge region into DESTINATION-FILE as %s." format-type)
+     (interactive
+      (list
+       (denote-file-prompt nil ,(format "Merge region as %s into FILE" format-type))))
+     (denote-merge-region destination-file ',format-type)))
+
+;;;###autoload (autoload 'denote-merge-region-plain "denote-merge")
+(denote-merge-define-region-convenience-command plain)
+
+;;;###autoload (autoload 'denote-merge-region-plain-indented "denote-merge")
+(denote-merge-define-region-convenience-command plain-indented)
+
+;;;###autoload (autoload 'denote-merge-region-org-src "denote-merge")
+(denote-merge-define-region-convenience-command org-src)
+
+;;;###autoload (autoload 'denote-merge-region-org-quote "denote-merge")
+(denote-merge-define-region-convenience-command org-quote)
+
+;;;###autoload (autoload 'denote-merge-region-org-example "denote-merge")
+(denote-merge-define-region-convenience-command org-example)
+
+;;;###autoload (autoload 'denote-merge-region-markdown-quote "denote-merge")
+(denote-merge-define-region-convenience-command markdown-quote)
+
+;;;###autoload (autoload 'denote-merge-region-markdown-fenced-block "denote-merge")
+(denote-merge-define-region-convenience-command markdown-fenced-block)
+
 (provide 'denote-merge)
 ;;; denote-merge.el ends here
