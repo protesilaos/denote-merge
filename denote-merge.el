@@ -79,7 +79,13 @@ one file and appends it to the other, establishing links between the two
 
 When this user option is set to nil, those buffers are not saved: the
 user must save them manually, perhaps to check the changes made to
-them (also see `save-some-buffers')."
+them (also see `save-some-buffers').
+
+Saving buffers automatically might leads to data loss.  When in doubt,
+keep this option to its default nil value."
+  :type 'boolean
+  :package-version '(denote-merge . "0.1.0")
+  :group 'denote-merge)
   :type 'boolean
   :package-version '(denote-merge . "0.1.0")
   :group 'denote-merge)
