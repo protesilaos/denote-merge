@@ -313,10 +313,10 @@ FORMAT-REGION-AS is a symbol among `denote-merge-format-region-types'.
 
 Mark the merged text with `denote-merge-annotate-region'.
 
-Automatically save the affected buffer if `denote-merge-save-buffers' is
-non-nil.  Then automatically kill the buffer if
-`denote-merge-kill-buffers' is non-nil.  Only kill the buffer if it is
-saved."
+Automatically save the affected buffer if the user option
+`denote-merge-save-buffers' is non-nil.  Then automatically kill the
+buffer if the user option `denote-merge-kill-buffers' is non-nil.  Only
+kill the buffer if it is saved."
   (interactive
    (list
     (denote-file-prompt nil "Merge region into FILE")
