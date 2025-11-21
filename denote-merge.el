@@ -316,7 +316,7 @@ non-nil."
     ;; and Markdown files, for example, so we cannot assume uniformity.
     (insert (denote-format-link
              to-file
-             (denote-get-link-description from-file)
+             (denote-get-link-description to-file)
              (denote-filetype-heuristics from-file)
              nil))
     (when denote-merge-save-buffers
@@ -330,7 +330,7 @@ non-nil."
                ;; Same as the comment above about link formatting.
                (denote-format-link
                 from-file
-                (denote-get-link-description to-file)
+                (denote-get-link-description from-file)
                 (denote-filetype-heuristics to-file)
                 nil)))
       (when denote-merge-save-buffers
