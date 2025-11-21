@@ -356,11 +356,13 @@ kill the buffer if it is saved."
                text
                format-region-as
                ;; Same as the comment above about link formatting.
-               (denote-format-link
-                source-file
-                (denote-get-link-description source-file)
-                (denote-filetype-heuristics destination-file)
-                nil)))
+               (if (denote-file-is-writable-and-supported-p source-file)
+                   (denote-format-link
+                    source-file
+                    (denote-get-link-description source-file)
+                    (denote-filetype-heuristics destination-file)
+                    nil)
+                 "")))
       (when denote-merge-save-buffers
         (save-buffer))
       (when denote-merge-kill-buffers
