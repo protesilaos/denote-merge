@@ -297,10 +297,11 @@ Available types are those defined in `denote-merge-format-region-types'."
       'denote-merge-format-region-type-prompt-history default))))
 
 ;;;###autoload
-(defun denote-merge-region (to-file &optional format-region-as)
-  "Merge the currently active region TO-FILE.
-Delete the region from the current buffer after merging it.  Create link
-from the one file to the other.
+(defun denote-merge-region (destination-file &optional format-region-as)
+  "Merge the currently active region DESTINATION-FILE.
+If the current buffer has a file that conforms with the Denote
+file-naming scheme, delete the region from it after merging it and then
+create a link pointing to the DESTINATION-FILE.
 
 With optional FORMAT-REGION-AS format the region according to one among
 the symbols in `denote-merge-format-region-types'.  When called
@@ -321,29 +322,29 @@ saved."
       (denote-merge-format-region-type-prompt))))
   (unless (region-active-p)
     (user-error "There is no active region; aborting"))
-  (unless (file-writable-p to-file)
-    (user-error "The file `%s' is not writable; aborting" to-file))
+  (unless (file-writable-p destination-file)
+    (user-error "The file `%s' is not writable; aborting" destination-file))
   (let* ((beg (region-beginning))
          (end (region-end))
          (text (buffer-substring-no-properties beg end))
-         (from-file buffer-file-name))
+         (source-file buffer-file-name))
     ;; We do this because `denote-get-link-description' will work with
     ;; the active region.  What we want is to use the title of the
     ;; file instead.
     (deactivate-mark)
-    (when (denote-file-is-writable-and-supported-p from-file)
+    (when (denote-file-is-writable-and-supported-p source-file)
       (delete-region beg end)
       ;; The link formatting has to be done in accordance with the type
       ;; of the buffer we are visiting.  The user might link between Org
       ;; and Markdown files, for example, so we cannot assume uniformity.
       (insert (denote-format-link
-               to-file
-               (denote-get-link-description to-file)
-               (denote-filetype-heuristics from-file)
+               destination-file
+               (denote-get-link-description destination-file)
+               (denote-filetype-heuristics source-file)
                nil)))
     (when denote-merge-save-buffers
       (save-buffer))
-    (with-current-buffer (find-file-noselect to-file)
+    (with-current-buffer (find-file-noselect destination-file)
       (goto-char (point-max))
       (insert "\n\n")
       (insert (denote-merge--format-region
@@ -351,9 +352,9 @@ saved."
                format-region-as
                ;; Same as the comment above about link formatting.
                (denote-format-link
-                from-file
-                (denote-get-link-description from-file)
-                (denote-filetype-heuristics to-file)
+                source-file
+                (denote-get-link-description source-file)
+                (denote-filetype-heuristics destination-file)
                 nil)))
       (when denote-merge-save-buffers
         (save-buffer))
