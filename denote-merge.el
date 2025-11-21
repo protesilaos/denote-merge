@@ -312,7 +312,8 @@ interactively, FORMAT-REGION-AS is the prefix argument.  In that case,
 prompt for the type of formatting.  When called from Lisp
 FORMAT-REGION-AS is a symbol among `denote-merge-format-region-types'.
 
-Mark the merged text with `denote-merge-annotate-region'.
+Annotate the merged text with the text of the user option
+`denote-merge-annotate-region'.
 
 Automatically save the affected buffer if the user option
 `denote-merge-save-buffers' is non-nil.  Then automatically kill the
