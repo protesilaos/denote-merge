@@ -1,0 +1,340 @@
+;;; denote-merge.el --- Denote extension to merge contents from one note into another -*- lexical-binding: t -*-
+
+;; Copyright (C) 2025  Free Software Foundation, Inc.
+
+;; Author: Protesilaos Stavrou <info@protesilaos.com>
+;; Maintainer: Protesilaos Stavrou <info@protesilaos.com>
+;; URL: https://github.com/protesilaos/denote-merge
+;; Version: 0.0.0
+;; Package-Requires: ((emacs "28.1") (denote "4.0.0"))
+
+;; This file is NOT part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+;;
+;; WORK-IN-PROGRESS.
+;;
+;; Optional Denote extension to merge contents from one note into another.
+
+;;; Code:
+
+(require 'denote)
+
+(defgroup denote-merge ()
+  "Optional Denote extension to merge contents from one note into another."
+  :group 'denote
+  :link '(info-link "(denote) top")
+  :link '(info-link "(denote-merge) top")
+  :link '(url-link :tag "Denote homepage" "https://protesilaos.com/emacs/denote")
+  :link '(url-link :tag "Denote Org homepage" "https://protesilaos.com/emacs/denote-merge"))
+
+(defcustom denote-merge-annotate-file "MERGED FILE"
+  "Text to mark the contents of a file that was merged.
+The command `denote-merge-file' inserts this text together with the
+title of the file it merged to indicate where the merged file contents
+start from.
+
+When the value is nil or an empty string, `denote-merge-file' will not
+add an annotation."
+  :type '(choice
+          (string :tag "Text to use")
+          (const :tag "Do not use any text" nil))
+  :package-version '(denote-merge . "0.1.0")
+  :group 'denote-merge)
+
+(defcustom denote-merge-annotate-region "MERGED REGION"
+  "Text to mark a region that is merged from another file.
+The command `denote-merge-region' inserts this text together with a link
+to the file from where the region was taken.
+
+When the value is nil or an empty string, `denote-merge-region' will not
+add an annotation."
+  :type '(choice
+          (string :tag "Text to use")
+          (const :tag "Do not use any text" nil))
+  :package-version '(denote-merge . "0.1.0")
+  :group 'denote-merge)
+
+(defcustom denote-merge-save-buffers nil
+  "When non-nil, automatically save buffers affected by merge operations.
+The commands `denote-merge-file' and `denote-merge-region' operate
+across files and modify the respective buffers.  The command
+`denote-merge-file' checks whether the merged file had any backlinks
+and, if so, proceeds to update the links to use the current identifier.
+While the command `denote-merge-region' removes the active region from
+one file and appends it to the other, establishing links between the two
+
+When this user option is set to nil, those buffers are not saved: the
+user must save them manually, perhaps to check the changes made to
+them (also see `save-some-buffers')."
+  :type 'boolean
+  :package-version '(denote-merge . "0.1.0")
+  :group 'denote-merge)
+
+(defun denote-merge--get-contents (file)
+  "Get the contents of FILE without the front matter.
+Work with the assumption that front matter is a continuous region of
+lines starting at the top of the file and ending in an empty line."
+  (with-temp-buffer
+    (insert-file-contents file)
+    (goto-char (point-min))
+    (re-search-forward "^$" nil t)
+    (buffer-substring-no-properties (point) (point-max))))
+
+(defun denote-merge--format-heading (string)
+  "Create a heading with the given STRING.
+Determine the syntax of a heading based on the major mode."
+  (setq string (if (or (null denote-merge-annotate-file) (string-blank-p denote-merge-annotate-file))
+                   string
+                 (format "%s: %s" denote-merge-annotate-file string)))
+  (pcase (derived-mode-p major-mode)
+    ('org-mode (format "* %s\n\n" string))
+    ('markdown-mode (format "# %s\n\n" string))
+    ('text-mode (format "%s\n%s\n\n" string (make-string (length string) ?-)))
+    (_ (error "Unknown major mode; cannot format heading"))))
+
+(defun denote-merge--replace-identifier-in-file (old-identifier new-identifier file save-p)
+  "Replace every `denote:' link OLD-IDENTIFIER to NEW-IDENTIFIER in FILE.
+When SAVE-P is non-nil, save the affected buffer.  Else send a message
+to inform the user about the need to review and save the buffer."
+  (condition-case error-data
+      (with-current-buffer (find-file-noselect file)
+        (goto-char (point-min))
+        (let* ((file-type (denote-filetype-heuristics file))
+               (regexp (denote--link-in-context-regexp file-type)))
+          (while (re-search-forward regexp nil t)
+            (replace-match new-identifier nil t nil 1)))
+        (if save-p
+            (save-buffer)
+          (message "Remember to review and save the buffer `%s'" (current-buffer))))
+    (:success
+     (message "Updated `%s' to link to `%s' instead od `%s'"
+              (propertize file 'face 'denote-faces-prompt-current-name)
+              (propertize new-identifier 'face 'denote-faces-prompt-new-name)
+              (propertize old-identifier 'face 'denote-faces-prompt-old-name)))
+    ((quit user-error error)
+     (message "Stopped at `%s' file because of this: `%s'" file error-data))))
+
+(defun denote-merge--delete-file (file)
+  "Delete the given FILE in accordance with `delete-by-moving-to-trash'."
+  (when-let* ((buffer (get-file-buffer file)))
+    (let ((kill-buffer-query-functions nil))
+      (kill-buffer buffer)))
+  (delete-file file delete-by-moving-to-trash))
+
+;;;###autoload
+(defun denote-merge-file (to-file from-file)
+  "Merge the contents of FROM-FILE to TO-FILE.
+Update any `denote:' links to FROM-FILE to point to TO-FILE.  Then delete
+FROM-FILE.  Mark the merged file contents with `denote-merge-annotate-file'.
+
+When called interactively, prompt from FROM-FILE as a file in the
+variable `denote-directory'.  For the TO-FILE use the current file if it
+is editable and has a known file type, else prompt for one as well.
+
+Make the TO-FILE condition what the FROM-FILE will be by limiting the
+prompt for it to files that share the same file extension (e.g. merge an
+Org file into another Org file).  This is to ensure the contents are
+appropriate for the given major mode.
+
+When called from Lisp, FROM-FILE and TO-FILE are strings pointing to
+file paths.  Throw an error if their file extensions differ."
+  (interactive
+   (let* ((current-file (if (and buffer-file-name
+                                 (denote-file-is-writable-and-supported-p buffer-file-name))
+                            buffer-file-name
+                          (denote-file-prompt nil "File to merge INTO")))
+          (current-file-extension (denote-get-file-extension-sans-encryption current-file))
+          (files-to-limit-to (regexp-quote current-file-extension)))
+     (list
+      current-file
+      (denote-file-prompt files-to-limit-to "File to merge FROM"))))
+  (unless (string= (file-name-extension to-file) (file-name-extension from-file))
+    (error "The files do not share the same file extension: from `%s' to `%s'" from-file to-file))
+  (unless (file-writable-p to-file)
+    (user-error "The file `%s' is not writable; aborting" to-file))
+  (unless (file-writable-p from-file)
+    (user-error "The file `%s' is not writable; aborting" from-file))
+  (let ((old-contents (denote-merge--get-contents from-file))
+        (old-title (denote-retrieve-title-or-filename from-file (denote-filetype-heuristics from-file)))
+        (old-identifier (denote-retrieve-filename-identifier from-file))
+        (new-identifier (denote-retrieve-filename-identifier to-file)))
+    (with-current-buffer (find-file to-file)
+      (goto-char (point-max))
+      (insert "\n\n")
+      (insert (denote-merge--format-heading old-title))
+      (insert old-contents))
+    (let* ((old-backlinks-xrefs (denote-retrieve-xref-alist-for-backlinks old-identifier))
+           (old-backlinks-files (mapcar #'car old-backlinks-xrefs)))
+      (dolist (file old-backlinks-files)
+        (denote-merge--replace-identifier-in-file old-identifier new-identifier file denote-merge-save-buffers))
+      (denote-merge--delete-file from-file))
+    (if denote-merge-save-buffers
+        (message "Merged `%s' into `%s'"
+                 (propertize from-file 'face 'denote-faces-prompt-old-name)
+                 (propertize to-file 'face 'denote-faces-prompt-new-name))
+      (message "Merged `%s' into `%s'; do `%s' to save files that had the old file links"
+               (propertize from-file 'face 'denote-faces-prompt-old-name)
+               (propertize to-file 'face 'denote-faces-prompt-new-name)
+               (propertize "M-x save-some-buffers" 'face 'help-key-binding)))))
+
+(defconst denote-merge-format-region-types
+  '(plain plain-indented org-src org-quote org-example markdown-quote markdown-fenced-block)
+  "Format region types.")
+
+(defun denote-merge--format-region (string type link)
+  "Format the STRING for `denote-merge-region' in accordance with TYPE.
+TYPE is a symbol among `denote-merge-format-region-types'.  If TYPE is
+unknown, fall back to `plain'.
+
+Annotate STRING with `denote-merge-annotate-region' and include LINK."
+  (when (or (null string) (string-blank-p string))
+    (error "The string cannot be nil or blank"))
+  (let* ((annotation (if (or (null denote-merge-annotate-region) (string-blank-p denote-merge-annotate-region))
+                         (format "%s:\n\n" link)
+                       (format "%s: %s\n\n" denote-merge-annotate-region link)))
+         (string (if (string-suffix-p "\n" string)
+                     string
+                   (format "%s\n" string)))
+         (org-block-fn (lambda (specifier)
+                         (with-temp-buffer
+                           (insert annotation)
+                           (insert (format "#+begin_%s\n" specifier))
+                           (insert string)
+                           (insert (format "#+end_%s\n" specifier))
+                           (buffer-string))))
+         (quote-fn (lambda (prefix)
+                     (with-temp-buffer
+                       (insert prefix)
+                       (insert string)
+                       (goto-char (point-min))
+                       (insert annotation)
+                       (while (and (forward-line 1) (not (eobp)))
+                         (insert prefix))
+                       (buffer-string)))))
+    (unless (memq type denote-merge-format-region-types)
+      (setq type 'plain))
+    (pcase type
+      ('plain (with-temp-buffer
+                (insert annotation)
+                (insert string)
+                (buffer-string)))
+      ;; TODO 2025-11-21: Does it make sense for us to rely on
+      ;; `tab-width' or should we have our own user option?
+      ('plain-indented (funcall quote-fn (make-string tab-width ? )))
+      ('org-src (funcall org-block-fn "src"))
+      ('org-quote (funcall org-block-fn "quote"))
+      ('org-example (funcall org-block-fn "example"))
+      ('markdown-quote (funcall quote-fn "> "))
+      ('markdown-fenced-block (with-temp-buffer
+                                (insert annotation)
+                                (insert "```\n")
+                                (insert string)
+                                (insert "```\n")
+                                (buffer-string))))))
+
+(defvar denote-merge-format-region-type-prompt-history nil
+  "Minibuffer history for `denote-merge-format-region-type-prompt'.")
+
+(defun denote-merge-annotate-format-region-types (type)
+  "Annotate completion candidate of TYPE for `denote-sequence-type-prompt'."
+  (when-let* ((type (intern-soft type))
+              (description (pcase type
+                             ('plain "Insert the text as-is")
+                             ('plain-indented "Insert the text as-is plus indentation")
+                             ('org-src "Wrap the text in an Org SRC block")
+                             ('org-quote "Wrap the text in an Org QUOTE block")
+                             ('org-example "Wrap the text in an Org EXAMPLE block")
+                             ('markdown-quote "Render the text as Markdown blockquote")
+                             ('markdown-fenced-block "Wrap the text in Markdown fenced block delimiters"))))
+    (format "%s-- %s"
+            (propertize " " 'display '(space :align-to 25))
+            (propertize description 'face 'completions-annotations))))
+
+(defun denote-merge-format-region-type-prompt ()
+  "Prompt for a type of formatting for a region.
+Available types are those defined in `denote-merge-format-region-types'."
+  (let ((default (car denote-merge-format-region-type-prompt-history))
+        (completion-extra-properties
+         (list :annotation-function #'denote-merge-annotate-format-region-types)))
+    (intern
+     (completing-read
+      (format-prompt "Select type of region formatting" default)
+      (denote--completion-table 'denote-merge-region-types denote-merge-format-region-types)
+      nil t nil
+      'denote-merge-format-region-type-prompt-history default))))
+
+:;;###autoload
+(defun denote-merge-region (to-file &optional format-region-as)
+  "Merge the currently active region TO-FILE.
+Delete the region from the current buffer after merging it.  Create link
+from the one file to the other.
+
+With optional FORMAT-REGION-AS format the region according to one among
+the symbols in `denote-merge-format-region-types'.  When called
+interactively, FORMAT-REGION-AS is the prefix argument.  In that case,
+prompt for the type of formatting.  When called from Lisp
+FORMAT-REGION-AS is a symbol among `denote-merge-format-region-types'.
+
+Mark the merged text with `denote-merge-annotate-region'.
+
+Automatically save the affected buffer if `denote-merge-save-buffers' is
+non-nil."
+  (interactive
+   (list
+    (denote-file-prompt nil "Merge region into FILE")
+    (when current-prefix-arg
+      (denote-merge-format-region-type-prompt))))
+  (unless (region-active-p)
+    (user-error "There is no active region; aborting"))
+  (unless (file-writable-p to-file)
+    (user-error "The file `%s' is not writable; aborting" to-file))
+  (let* ((beg (region-beginning))
+         (end (region-end))
+         (text (buffer-substring-no-properties beg end))
+         (from-file buffer-file-name))
+    ;; We do this because `denote-get-link-description' will work with
+    ;; the active region.  What we want is to use the title of the
+    ;; file instead.
+    (deactivate-mark)
+    (delete-region beg end)
+    ;; The link formatting has to be done in accordance with the type
+    ;; of the buffer we are visiting.  The user might link between Org
+    ;; and Markdown files, for example, so we cannot assume uniformity.
+    (insert (denote-format-link
+             to-file
+             (denote-get-link-description from-file)
+             (denote-filetype-heuristics from-file)
+             nil))
+    (when denote-merge-save-buffers
+      (save-buffer))
+    (with-current-buffer (find-file-noselect to-file)
+      (goto-char (point-max))
+      (insert "\n\n")
+      (insert (denote-merge--format-region
+               text
+               format-region-as
+               ;; Same as the comment above about link formatting.
+               (denote-format-link
+                from-file
+                (denote-get-link-description to-file)
+                (denote-filetype-heuristics to-file)
+                nil)))
+      (when denote-merge-save-buffers
+        (save-buffer)))))
+
+(provide 'denote-merge)
+;;; denote-merge.el ends here
