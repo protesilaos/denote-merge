@@ -320,6 +320,7 @@ Automatically save the affected buffer if the user option
 buffer if the user option `denote-merge-kill-buffers' is non-nil.  Only
 kill the buffer if it is saved."
   (interactive
+   ;; FIXME 2025-11-21: We should not prompt if there is no active region.
    (list
     (denote-file-prompt nil "Merge region into FILE")
     (when current-prefix-arg
