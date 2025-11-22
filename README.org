@@ -73,11 +73,11 @@ GNU ELPA.
 :CUSTOM_ID: h:overview
 :END:
 
-This is an optional extension for the ~denote~ package. It provides
+This is an optional extension to the ~denote~ package. It provides
 commands and relevant user options to streamline the work of merging
 contents from one Denote file to another. This is for users who
-periodically review their notes to add, remove, or consolidate their
-accumulate knowledge.
+periodically review their notes to add, remove, or otherwise
+consolidate their accumulate knowledge.
 
 ** Merge one file into another
 :PROPERTIES:
