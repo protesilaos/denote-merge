@@ -337,11 +337,11 @@ kill the buffer if it is saved."
     ;; the active region.  What we want is to use the title of the
     ;; file instead.
     (deactivate-mark)
-    (when (denote-file-is-writable-and-supported-p source-file)
-      (delete-region beg end)
+    (delete-region beg end)
       ;; The link formatting has to be done in accordance with the type
       ;; of the buffer we are visiting.  The user might link between Org
       ;; and Markdown files, for example, so we cannot assume uniformity.
+    (when (denote-file-is-writable-and-supported-p source-file)
       (insert (denote-format-link
                destination-file
                (denote-get-link-description destination-file)
