@@ -41,7 +41,7 @@
   :link '(info-link "(denote) top")
   :link '(info-link "(denote-merge) top")
   :link '(url-link :tag "Denote homepage" "https://protesilaos.com/emacs/denote")
-  :link '(url-link :tag "Denote Org homepage" "https://protesilaos.com/emacs/denote-merge"))
+  :link '(url-link :tag "Denote Merge homepage" "https://protesilaos.com/emacs/denote-merge"))
 
 (defcustom denote-merge-annotate-file "MERGED FILE"
   "Text to mark the contents of a file that was merged.
