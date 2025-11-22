@@ -344,10 +344,6 @@ kill the buffer if it is saved."
          (end (region-end))
          (text (buffer-substring-no-properties beg end))
          (source-file buffer-file-name))
-    ;; We do this because `denote-get-link-description' will work with
-    ;; the active region.  What we want is to use the title of the
-    ;; file instead.
-    (deactivate-mark)
     (delete-region beg end)
     (when-let* ((link (denote-merge--region-format-link destination-file source-file)))
       (insert link))
