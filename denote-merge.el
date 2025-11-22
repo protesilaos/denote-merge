@@ -299,6 +299,24 @@ Available types are those defined in `denote-merge-format-region-types'."
       nil t nil
       'denote-merge-format-region-type-prompt-history default))))
 
+(defun denote-merge--format-link (other-file this-file)
+  "Return link to OTHER-FILE using the THIS-FILE type.
+Both OTHER-FILE and THIS-FILE are supported by Denote, per
+`denote-file-is-writable-and-supported-p'."
+  (when (and (denote-file-is-writable-and-supported-p other-file)
+             (denote-file-is-writable-and-supported-p this-file))
+    (denote-format-link
+     other-file
+     (denote-get-link-description other-file)
+     (denote-filetype-heuristics this-file)
+     nil)))
+
+(defun denote-merge--maybe-insert-link (other-file this-file)
+  "Insert link to OTHER-FILE using the THIS-FILE type.
+Do it only if both are `denote-file-is-writable-and-supported-p'."
+  (when-let* ((link (denote-merge--format-link other-file this-file)))
+    (insert link)))
+
 ;;;###autoload
 (defun denote-merge-region (destination-file &optional format-region-as)
   "Merge the currently active region DESTINATION-FILE.
@@ -338,31 +356,13 @@ kill the buffer if it is saved."
     ;; file instead.
     (deactivate-mark)
     (delete-region beg end)
-      ;; The link formatting has to be done in accordance with the type
-      ;; of the buffer we are visiting.  The user might link between Org
-      ;; and Markdown files, for example, so we cannot assume uniformity.
-    (when (denote-file-is-writable-and-supported-p source-file)
-      (insert (denote-format-link
-               destination-file
-               (denote-get-link-description destination-file)
-               (denote-filetype-heuristics source-file)
-               nil)))
+    (denote-merge--maybe-insert-link destination-file source-file)
     (when denote-merge-save-buffers
       (save-buffer))
     (with-current-buffer (find-file-noselect destination-file)
       (goto-char (point-max))
       (insert "\n\n")
-      (insert (denote-merge--format-region
-               text
-               format-region-as
-               ;; Same as the comment above about link formatting.
-               (if (denote-file-is-writable-and-supported-p source-file)
-                   (denote-format-link
-                    source-file
-                    (denote-get-link-description source-file)
-                    (denote-filetype-heuristics destination-file)
-                    nil)
-                 "")))
+      (denote-merge--maybe-insert-link source-file destination-file)
       (when denote-merge-save-buffers
         (save-buffer))
       (when denote-merge-kill-buffers
