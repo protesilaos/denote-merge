@@ -7,6 +7,6 @@ periodically review their notes to add, remove, or otherwise
 consolidate their accumulate knowledge.
 
 + Package name (GNU ELPA): `denote-merge` (⚠️ Not available yet)
-+ Official manual: <https://protesilaos.com/emacs/denote-merge> (⚠️ Not available yet)
++ Official manual: <https://protesilaos.com/emacs/denote-merge>
 + Git repository: <https://github.com/protesilaos/denote-merge>
 + Backronym: Denote... Merging Eventually Reformats the Given Entries

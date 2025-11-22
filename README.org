@@ -31,7 +31,7 @@ commit, is explicitly marked as such.
 Current development target is {{{development-version}}}.
 
 + Package name (GNU ELPA): ~denote-merge~ (⚠️ Not available yet)
-+ Official manual: <https://protesilaos.com/emacs/denote-merge> (⚠️ Not available yet)
++ Official manual: <https://protesilaos.com/emacs/denote-merge>
 + Git repository: <https://github.com/protesilaos/denote-merge>
 + Backronym: Denote... Merging Eventually Reformats the Given Entries
 
