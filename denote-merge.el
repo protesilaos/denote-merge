@@ -217,15 +217,26 @@ pointing to file paths.  Throw an error if their file extensions differ."
   '(plain plain-indented org-src org-quote org-example markdown-quote markdown-fenced-block)
   "Format region types.")
 
-(defun denote-merge--format-region (string type link)
-  "Format the STRING for `denote-merge-region' in accordance with TYPE.
-TYPE is a symbol among `denote-merge-format-region-types'.  If TYPE is
-unknown, fall back to `plain'.
+(defun denote-merge--region-format-link (other-file this-file)
+  "Insert link to OTHER-FILE using the THIS-FILE type.
+When ADD-NEWLINES is non-nil, insert two newlines after the link."
+  (denote-format-link
+   other-file
+   (denote-get-link-description other-file)
+   (denote-filetype-heuristics this-file)
+   nil))
 
-Annotate STRING with `denote-merge-annotate-region' and include LINK."
+(defun denote-merge--format-region (string region-type other-file this-file)
+  "Format the STRING for `denote-merge-region' in accordance with TYPE.
+REGION-TYPE is a symbol among `denote-merge-format-region-types'.  If
+REGION-TYPE is unknown, fall back to `plain'.
+
+Annotate STRING with `denote-merge-annotate-region' and include link to
+OTHER-FILE given THIS-FILE file type."
   (when (or (null string) (string-blank-p string))
     (error "The string cannot be nil or blank"))
-  (let* ((annotation (if (or (null denote-merge-annotate-region) (string-blank-p denote-merge-annotate-region))
+  (let* ((link (or (denote-merge--region-format-link other-file this-file) ""))
+         (annotation (if (or (null denote-merge-annotate-region) (string-blank-p denote-merge-annotate-region))
                          (format "%s:\n\n" link)
                        (format "%s: %s\n\n" denote-merge-annotate-region link)))
          (string (if (string-suffix-p "\n" string)
@@ -247,9 +258,9 @@ Annotate STRING with `denote-merge-annotate-region' and include LINK."
                        (while (and (forward-line 1) (not (eobp)))
                          (insert prefix))
                        (buffer-string)))))
-    (unless (memq type denote-merge-format-region-types)
-      (setq type 'plain))
-    (pcase type
+    (unless (memq region-type denote-merge-format-region-types)
+      (setq region-type 'plain))
+    (pcase region-type
       ('plain (with-temp-buffer
                 (insert annotation)
                 (insert string)
@@ -299,24 +310,6 @@ Available types are those defined in `denote-merge-format-region-types'."
       nil t nil
       'denote-merge-format-region-type-prompt-history default))))
 
-(defun denote-merge--format-link (other-file this-file)
-  "Return link to OTHER-FILE using the THIS-FILE type.
-Both OTHER-FILE and THIS-FILE are supported by Denote, per
-`denote-file-is-writable-and-supported-p'."
-  (when (and (denote-file-is-writable-and-supported-p other-file)
-             (denote-file-is-writable-and-supported-p this-file))
-    (denote-format-link
-     other-file
-     (denote-get-link-description other-file)
-     (denote-filetype-heuristics this-file)
-     nil)))
-
-(defun denote-merge--maybe-insert-link (other-file this-file)
-  "Insert link to OTHER-FILE using the THIS-FILE type.
-Do it only if both are `denote-file-is-writable-and-supported-p'."
-  (when-let* ((link (denote-merge--format-link other-file this-file)))
-    (insert link)))
-
 ;;;###autoload
 (defun denote-merge-region (destination-file &optional format-region-as)
   "Merge the currently active region DESTINATION-FILE.
@@ -356,13 +349,14 @@ kill the buffer if it is saved."
     ;; file instead.
     (deactivate-mark)
     (delete-region beg end)
-    (denote-merge--maybe-insert-link destination-file source-file)
+    (when-let* ((link (denote-merge--region-format-link destination-file source-file)))
+      (insert link))
     (when denote-merge-save-buffers
       (save-buffer))
     (with-current-buffer (find-file-noselect destination-file)
       (goto-char (point-max))
       (insert "\n\n")
-      (denote-merge--maybe-insert-link source-file destination-file)
+      (insert (denote-merge--format-region text format-region-as source-file destination-file))
       (when denote-merge-save-buffers
         (save-buffer))
       (when denote-merge-kill-buffers
