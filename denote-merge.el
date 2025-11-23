@@ -153,7 +153,7 @@ non-nil, kill the buffer if it is saved.  Never kill an unsaved buffer."
 (defun denote-merge--delete-file (file)
   "Delete the given FILE in accordance with `delete-by-moving-to-trash'."
   (when-let* ((buffer (get-file-buffer file)))
-    (denote-merge--kill-buffer (current-buffer)))
+    (denote-merge--kill-buffer buffer))
   (delete-file file delete-by-moving-to-trash))
 
 ;;;###autoload
