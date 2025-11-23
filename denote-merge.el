@@ -355,14 +355,15 @@ kill the buffer if it is saved."
       (insert link))
     (when denote-merge-save-buffers
       (save-buffer))
-    (with-current-buffer (find-file-noselect destination-file)
-      (goto-char (point-max))
-      (insert "\n\n")
-      (insert (denote-merge--format-region text format-region-as source-file destination-file))
-      (when denote-merge-save-buffers
-        (save-buffer))
-      (when denote-merge-kill-buffers
-        (denote-merge--kill-buffer (current-buffer))))))
+    (let ((buffer (find-file-noselect destination-file)))
+      (with-current-buffer buffer
+        (goto-char (point-max))
+        (insert "\n\n")
+        (insert (denote-merge--format-region text format-region-as source-file destination-file))
+        (when denote-merge-save-buffers
+          (save-buffer))
+        (when denote-merge-kill-buffers
+          (denote-merge--kill-buffer buffer))))))
 
 (defmacro denote-merge-define-region-convenience-command (format-type)
   "Define a convenience variant of `denote-merge-region' with FORMAR-TYPE.
