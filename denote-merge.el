@@ -222,11 +222,12 @@ pointing to file paths.  Throw an error if their file extensions differ."
 (defun denote-merge--region-format-link (other-file this-file)
   "Insert link to OTHER-FILE using the THIS-FILE type.
 When ADD-NEWLINES is non-nil, insert two newlines after the link."
-  (denote-format-link
-   other-file
-   (denote-get-link-description other-file)
-   (denote-filetype-heuristics this-file)
-   nil))
+  (let ((file-type (denote-filetype-heuristics this-file)))
+    (denote-format-link
+     other-file
+     (denote-get-link-description other-file file-type)
+     file-type
+     nil)))
 
 (defun denote-merge--format-region (string region-type other-file this-file)
   "Format the STRING for `denote-merge-region' in accordance with TYPE.
