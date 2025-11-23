@@ -119,7 +119,7 @@ Determine the syntax of a heading based on the major mode."
     ('org-mode (format "* %s\n\n" string))
     ('markdown-mode (format "# %s\n\n" string))
     ('text-mode (format "%s\n%s\n" string (make-string (length string) ?-)))
-    (_ (error "Unknown major mode; cannot format heading"))))
+    (_ (error "Unsupported major mode `%s'; cannot format heading" major-mode))))
 
 (defun denote-merge--kill-buffer (buffer)
   "Kill the BUFFER without asking any questions."
