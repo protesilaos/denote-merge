@@ -118,7 +118,7 @@ Determine the syntax of a heading based on the major mode."
   (pcase (derived-mode-p major-mode)
     ('org-mode (format "* %s\n\n" string))
     ('markdown-mode (format "# %s\n\n" string))
-    ('text-mode (format "%s\n%s\n\n" string (make-string (length string) ?-)))
+    ('text-mode (format "%s\n%s\n" string (make-string (length string) ?-)))
     (_ (error "Unknown major mode; cannot format heading"))))
 
 (defun denote-merge--kill-buffer (buffer)
