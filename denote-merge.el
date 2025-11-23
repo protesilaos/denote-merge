@@ -369,7 +369,7 @@ kill the buffer if it is saved."
   "Define a convenience variant of `denote-merge-region' with FORMAR-TYPE.
 FORMAT-TYPE is a symbol one among `denote-merge-format-region-types'."
   (unless (memq format-type denote-merge-format-region-types)
-    (error "The format type `%s' is not a member of `denote-merge-format-region-types'"))
+    (error "The format type `%s' is not a member of `denote-merge-format-region-types'" format-type))
   `(defun ,(intern (format "denote-merge-region-%s" format-type)) (destination-file)
      ,(format "Merge region into DESTINATION-FILE as %s." format-type)
      (interactive
