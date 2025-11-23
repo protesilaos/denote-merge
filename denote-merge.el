@@ -261,13 +261,7 @@ OTHER-FILE given THIS-FILE file type."
                        (while (and (forward-line 1) (not (eobp)))
                          (insert prefix))
                        (buffer-string)))))
-    (unless (memq region-type denote-merge-format-region-types)
-      (setq region-type 'plain))
     (pcase region-type
-      ('plain (with-temp-buffer
-                (insert annotation)
-                (insert string)
-                (buffer-string)))
       ;; TODO 2025-11-21: Does it make sense for us to rely on
       ;; `tab-width' or should we have our own user option?
       ('plain-indented (funcall quote-fn (make-string tab-width ? )))
@@ -280,7 +274,11 @@ OTHER-FILE given THIS-FILE file type."
                                 (insert "```\n")
                                 (insert string)
                                 (insert "```\n")
-                                (buffer-string))))))
+                                (buffer-string)))
+      (_ (with-temp-buffer
+           (insert annotation)
+           (insert string)
+           (buffer-string))))))
 
 (defvar denote-merge-format-region-type-prompt-history nil
   "Minibuffer history for `denote-merge-format-region-type-prompt'.")
