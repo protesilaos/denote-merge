@@ -333,15 +333,17 @@ Automatically save the affected buffer if the user option
 buffer if the user option `denote-merge-kill-buffers' is non-nil.  Only
 kill the buffer if it is saved."
   (interactive
-   ;; FIXME 2025-11-21: We should not prompt if there is no active region.
-   (list
-    (denote-file-prompt nil "Merge region into FILE")
-    (when current-prefix-arg
-      (denote-merge-format-region-type-prompt))))
-  (unless (region-active-p)
-    (user-error "There is no active region; aborting"))
-  (unless (file-writable-p destination-file)
-    (user-error "The file `%s' is not writable; aborting" destination-file))
+   (if (region-active-p)
+       (list
+        (denote-file-prompt nil "Merge region into FILE")
+        (when current-prefix-arg
+          (denote-merge-format-region-type-prompt)))
+     (user-error "There is no active region; aborting")))
+  (unless (called-interactively-p 'interactive)
+    (unless (region-active-p)
+      (error "There is no active region; aborting"))
+    (unless (file-writable-p destination-file)
+      (error "The file `%s' is not writable; aborting" destination-file)))
   (let* ((beg (region-beginning))
          (end (region-end))
          (text (buffer-substring-no-properties beg end))
