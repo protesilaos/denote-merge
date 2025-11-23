@@ -280,8 +280,7 @@ OTHER-FILE given THIS-FILE file type."
                                 (insert "```\n")
                                 (insert string)
                                 (insert "```\n")
-                                (buffer-string)))
-      (_ (error "Unknown region type: `%S'" region-type)))))
+                                (buffer-string))))))
 
 (defvar denote-merge-format-region-type-prompt-history nil
   "Minibuffer history for `denote-merge-format-region-type-prompt'.")
