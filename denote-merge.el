@@ -131,16 +131,17 @@ Determine the syntax of a heading based on the major mode."
 When SAVE-P is non-nil, save the affected buffer.  When KILL-P is
 non-nil, kill the buffer if it is saved.  Never kill an unsaved buffer."
   (condition-case error-data
-      (with-current-buffer (find-file-noselect file)
-        (goto-char (point-min))
-        (let* ((file-type (denote-filetype-heuristics file))
-               (regexp (denote--link-in-context-regexp file-type)))
-          (while (re-search-forward regexp nil t)
-            (replace-match new-identifier nil t nil 1)))
-        (when save-p
-          (save-buffer))
-        (when kill-p
-          (denote-merge--kill-buffer (current-buffer))))
+      (let ((buffer (find-file-noselect file)))
+        (with-current-buffer buffer
+          (goto-char (point-min))
+          (let* ((file-type (denote-filetype-heuristics file))
+                 (regexp (denote--link-in-context-regexp file-type)))
+            (while (re-search-forward regexp nil t)
+              (replace-match new-identifier nil t nil 1)))
+          (when save-p
+            (save-buffer))
+          (when kill-p
+            (denote-merge--kill-buffer buffer))))
     (:success
      (message "Updated `%s' to link to `%s' instead od `%s'"
               (propertize file 'face 'denote-faces-prompt-current-name)
