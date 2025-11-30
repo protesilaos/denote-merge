@@ -215,9 +215,10 @@ pointing to file paths.  Throw an error if their file extensions differ."
                (propertize destination-file 'face 'denote-faces-prompt-new-name)
                (propertize "M-x save-some-buffers" 'face 'help-key-binding)))))
 
-(defconst denote-merge-format-region-types
-  '(plain plain-indented org-src org-quote org-example markdown-quote markdown-fenced-block)
-  "Format region types.")
+(eval-and-compile
+  (defconst denote-merge-format-region-types
+    '(plain plain-indented org-src org-quote org-example markdown-quote markdown-fenced-block)
+    "Format region types."))
 
 (defun denote-merge--region-format-link (other-file this-file)
   "Insert link to OTHER-FILE using the THIS-FILE type.
