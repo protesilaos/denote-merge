@@ -302,13 +302,14 @@ OTHER-FILE given THIS-FILE file type."
 (defun denote-merge-format-region-type-prompt ()
   "Prompt for a type of formatting for a region.
 Available types are those defined in `denote-merge-format-region-types'."
-  (let ((default (car denote-merge-format-region-type-prompt-history))
-        (completion-extra-properties
-         (list :annotation-function #'denote-merge-annotate-format-region-types)))
+  (let ((default (car denote-merge-format-region-type-prompt-history)))
     (intern
      (completing-read
       (format-prompt "Select type of region formatting" default)
-      (denote--completion-table 'denote-merge-region-types denote-merge-format-region-types)
+      (denote-get-completion-table
+       denote-merge-format-region-types
+       '(category . denote-merge-region-types)
+       '(annotation-function . denote-merge-annotate-format-region-types))
       nil t nil
       'denote-merge-format-region-type-prompt-history default))))
 
