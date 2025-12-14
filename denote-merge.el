@@ -295,7 +295,7 @@ OTHER-FILE given THIS-FILE file type."
                              ('org-example "Wrap the text in an Org EXAMPLE block")
                              ('markdown-quote "Render the text as Markdown blockquote")
                              ('markdown-fenced-block "Wrap the text in Markdown fenced block delimiters"))))
-    (format "%s-- %s"
+    (format "%s %s"
             (propertize " " 'display '(space :align-to 25))
             (propertize description 'face 'completions-annotations))))
 
