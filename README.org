@@ -10,7 +10,7 @@
 #+export_file_name: denote-merge.texi
 #+texinfo_filename: denote-merge.info
 #+texinfo_dir_category: Emacs misc features
-#+texinfo_dir_title: Denote Silo: (denote-merge)
+#+texinfo_dir_title: Denote Merge: (denote-merge)
 #+texinfo_dir_desc: Denote extension to merge contents from one note into another
 #+texinfo_header: @set MAINTAINERSITE @uref{https://protesilaos.com,maintainer webpage}
 #+texinfo_header: @set MAINTAINER Protesilaos Stavrou
@@ -200,7 +200,7 @@ according to the aforementioned types. They otherwise rely on the
 :END:
 #+cindex: Contributors
 
-Denote Silo is meant to be a collective effort.  Every bit of help matters.
+Denote Merge is meant to be a collective effort.  Every bit of help matters.
 
 + Author/maintainer :: Protesilaos Stavrou.
 
