@@ -206,6 +206,8 @@ Denote Merge is meant to be a collective effort.  Every bit of help matters.
 
 + Ideas and/or user feedback :: Sia Piperea.
 
+Thanks to Philip Kaludercic for reviewing the initial version of this package.
+
 * GNU Free Documentation License
 :PROPERTIES:
 :APPENDIX: t
