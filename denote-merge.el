@@ -276,10 +276,7 @@ OTHER-FILE given THIS-FILE file type."
                                 (insert string)
                                 (insert "```\n")
                                 (buffer-string)))
-      (_ (with-temp-buffer
-           (insert annotation)
-           (insert string)
-           (buffer-string))))))
+      (_ (concat annotation string)))))
 
 (defvar denote-merge-format-region-type-prompt-history nil
   "Minibuffer history for `denote-merge-format-region-type-prompt'.")
