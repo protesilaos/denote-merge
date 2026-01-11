@@ -115,11 +115,15 @@ Determine the syntax of a heading based on the major mode."
   (setq string (if (or (null denote-merge-annotate-file) (string-blank-p denote-merge-annotate-file))
                    string
                  (format "%s: %s" denote-merge-annotate-file string)))
-  (pcase (derived-mode-p major-mode)
-    ('org-mode (format "* %s\n\n" string))
-    ('markdown-mode (format "# %s\n\n" string))
-    ('text-mode (format "%s\n%s\n" string (make-string (length string) ?-)))
-    (_ (error "Unsupported major mode `%s'; cannot format heading" major-mode))))
+  (cond
+   ((derived-mode-p 'org-mode)
+    (format "* %s\n\n" string))
+   ((derived-mode-p 'markdown-mode)
+    (format "# %s\n\n" string))
+   ((derived-mode-p 'text-mode)
+    (format "%s\n%s\n" string (make-string (length string) ?-)))
+   (t
+    (error "Unsupported major mode `%s'; cannot format heading" major-mode))))
 
 (defun denote-merge--kill-buffer (buffer)
   "Kill the BUFFER without asking any questions."
