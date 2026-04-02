@@ -66,8 +66,8 @@ modify this GNU manual.”
   :ensure nil ; not in any package archive
   :init
   ;; Then upgrade it with the command `package-vc-upgrade' or `package-vc-upgrade-all'.
-  (unless (package-installed-p 'institution-calendar)
-    (package-vc-install "https://github.com/protesilaos/institution-calendar.git"))
+  (unless (package-installed-p 'denote-merge)
+    (package-vc-install "https://github.com/protesilaos/denote-merge.git"))
   ;; You can bind these to keys.  They are here so you can learn about them.
   :commands
   ( denote-merge-file
