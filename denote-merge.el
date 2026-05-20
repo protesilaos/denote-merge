@@ -5,7 +5,7 @@
 ;; Author: Protesilaos <info@protesilaos.com>
 ;; Maintainer: Protesilaos <info@protesilaos.com>
 ;; URL: https://github.com/protesilaos/denote-merge
-;; Version: 0.0.0
+;; Version: 0.1.0
 ;; Package-Requires: ((emacs "28.1") (denote "4.1.2"))
 
 ;; This file is NOT part of GNU Emacs.
