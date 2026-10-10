@@ -205,7 +205,7 @@ pointing to file paths.  Throw an error if their file extensions differ."
       (insert "\n\n")
       (insert (denote-merge--format-heading old-title))
       (insert old-contents))
-    (let* ((old-backlinks-xrefs (denote-retrieve-xref-alist-for-backlinks old-identifier))
+    (let* ((old-backlinks-xrefs (funcall denote-retrieve-xref-alist-for-backlinks-function old-identifier))
            (old-backlinks-files (mapcar #'car old-backlinks-xrefs)))
       (dolist (file old-backlinks-files)
         (denote-merge--replace-identifier-in-file old-identifier new-identifier file denote-merge-save-buffers denote-merge-kill-buffers))
